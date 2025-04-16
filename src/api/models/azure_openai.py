@@ -40,7 +40,6 @@ from api.schema import (
 )
 
 logger = logging.getLogger(__name__)
-print(os.environ.get('OPENAI_API_VERSION'))
 DEBUG = os.environ.get("DEBUG", "false").lower() != "false"
 
 try:
@@ -151,7 +150,7 @@ class AzureOpenAIChatModel(BaseChatModel):
     async def chat_stream(self, chat_request: ChatRequest) -> AsyncIterable[bytes]:
         """Implementation for Chat Stream API using Azure OpenAI."""
         self.validate(chat_request)
-        message_id = self.generate_message_id() # Keep using existing ID generation
+        message_id = self.generate_message_id() 
         azure_args = self._parse_request_for_azure(chat_request)
 
         try:
