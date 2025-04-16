@@ -29,7 +29,7 @@ async def list_models():
     # Combine Bedrock and Azure OpenAI models
     bedrock_models = [Model(id=model_id) for model_id in chat_model.list_models()]
     azure_models = [Model(id=model_id) for model_id in KNOWN_AZURE_DEPLOYMENTS.keys()]
-    return Models(data=bedrock_models + azure_models)
+    return Models(data=azure_models+bedrock_models )
 
 
 @router.get(

@@ -2,7 +2,7 @@ import os
 
 DEFAULT_API_KEYS = "bedrock"
 
-API_ROUTE_PREFIX = os.environ.get("API_ROUTE_PREFIX")
+API_ROUTE_PREFIX = os.environ.get("API_ROUTE_PREFIX", "/api/v1")
 AZURE_API_KEY = os.environ.get("AZURE_API_KEY")
 AZURE_API_BASE = os.environ.get("AZURE_API_BASE")
 
