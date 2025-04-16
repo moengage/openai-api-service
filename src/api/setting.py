@@ -3,6 +3,8 @@ import os
 DEFAULT_API_KEYS = "bedrock"
 
 API_ROUTE_PREFIX = os.environ.get("API_ROUTE_PREFIX", "/api/v1")
+AZURE_API_KEY = os.environ.get("AZURE_API_KEY", "b94e0a7e6c4a42bf91b5bdb12a274cdc")
+AZURE_API_BASE = os.environ.get("AZURE_API_BASE", "https://moe-chatgpt-v2.openai.azure.com")
 
 TITLE = "Amazon Bedrock Proxy APIs"
 SUMMARY = "OpenAI-Compatible RESTful APIs for Amazon Bedrock"

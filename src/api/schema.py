@@ -102,6 +102,7 @@ class ChatRequest(BaseModel):
     tools: list[Tool] | None = None
     tool_choice: str | object = "auto"
     stop: list[str] | str | None = None
+    system_prompt: str | None = None
 
 
 class Usage(BaseModel):
@@ -184,3 +185,13 @@ class ErrorMessage(BaseModel):
 
 class Error(BaseModel):
     error: ErrorMessage
+
+class ChatMessage:
+    def __init__(self, role: str, content: str):
+        self.role = role
+        self.content = content
+class ChatUsage:
+    def __init__(self, prompt_tokens: int, completion_tokens: int, total_tokens: int):
+        self.prompt_tokens = prompt_tokens
+        self.completion_tokens = completion_tokens
+        self.total_tokens = total_tokens
