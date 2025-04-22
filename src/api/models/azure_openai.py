@@ -56,6 +56,7 @@ except Exception as e:
 KNOWN_AZURE_DEPLOYMENTS = {
     "gpt-4": {"type": "chat", "modalities": ["TEXT"]},
     "gpt-35-turbo": {"type": "chat", "modalities": ["TEXT"]},
+    "o3-mini": {"type": "chat", "modalities": ["TEXT", "IMAGE"]},
 }
 
 azure_deployments_list = KNOWN_AZURE_DEPLOYMENTS
@@ -335,12 +336,12 @@ class AzureOpenAIChatModel(BaseChatModel):
         # --- Optional Inference Parameters ---
         if chat_request.temperature is not None:
             azure_params["temperature"] = chat_request.temperature
-        if chat_request.max_tokens is not None:
-             # Ensure max_tokens is not 0 or negative if provided
-             if chat_request.max_tokens > 0:
-                 azure_params["max_tokens"] = chat_request.max_tokens
+        if chat_request.max_completion_tokens is not None:
+             # Ensure max_completion_tokens is not 0 or negative if provided
+             if chat_request.max_completion_tokens > 0:
+                 azure_params["max_completion_tokens"] = chat_request.max_completion_tokens
              else:
-                 logger.warning(f"Ignoring invalid max_tokens value: {chat_request.max_tokens}")
+                 logger.warning(f"Ignoring invalid max_completion_tokens value: {chat_request.max_completion_tokens}")
         if chat_request.top_p is not None:
             azure_params["top_p"] = chat_request.top_p
         if chat_request.stop is not None:
@@ -369,7 +370,7 @@ class AzureOpenAIChatModel(BaseChatModel):
         Maps Azure OpenAI finish reasons to internal standard if necessary.
         Current mapping seems aligned with OpenAI standard, so direct pass-through is fine.
         If your internal standard differs, add mapping here.
-        Example: if internal needs 'length' instead of 'max_tokens'
+        Example: if internal needs 'length' instead of 'max_completion_tokens'
         mapping = { "length": "length", "stop": "stop", "tool_calls": "tool_calls", ... }
         return mapping.get(azure_finish_reason)
         """
