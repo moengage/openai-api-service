@@ -1,0 +1,28 @@
+clone:
+  git:
+    image: woodpeckerci/plugin-git
+    settings:
+      tags: true
+      depth: 1
+      lfs: false
+    when:
+      - event: pull_request
+        branch: master
+      - event: tag
+steps:
+  pii-dc-relay-service:
+    image: 612427630422.dkr.ecr.ap-southeast-1.amazonaws.com/sre/woodpecker:docker-26.1.4-cli
+    pull: true
+    environment:
+      DOCKER_HOST:
+        from_secret: DOCKER_HOST
+      BEDROCK_CERTIFICATE:
+      	from_secret: bedrock_certificate 
+    when:
+      - event: tag
+        ref: refs/tags/v*
+    commands:
+      - aws ecr get-login-password --region ap-southeast-1 | docker login --username AWS --password-stdin 612427630422.dkr.ecr.ap-southeast-1.amazonaws.com
+      - TAG=$(echo "$CI_COMMIT_TAG")
+      - docker buildx build --push -t 612427630422.dkr.ecr.ap-southeast-1.amazonaws.com/sre/openai-bedrock:$TAG -f src/Dockerfile.multiarch ./src 
+
