@@ -52,7 +52,7 @@ async def chat_completions(
             return StreamingResponse(content=azure_model.chat_stream(chat_request), media_type="text/event-stream")
         print("*********CHAT_REQUEST**********")
         print(azure_model.chat(chat_request))
-        return azure_model.chat(chat_request)
+        return await azure_model.chat(chat_request)
 
     # Handle Bedrock models
     model = BedrockModel()
