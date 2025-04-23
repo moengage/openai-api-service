@@ -14,8 +14,6 @@ steps:
     environment:
       DOCKER_HOST:
         from_secret: DOCKER_HOST
-      BEDROCK_CERTIFICATE:
-      	from_secret: bedrock_certificate 
     when:
       - event: tag
         ref: refs/tags/v*
