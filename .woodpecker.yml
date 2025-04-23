@@ -6,11 +6,9 @@ clone:
       depth: 1
       lfs: false
     when:
-      - event: pull_request
-        branch: master
       - event: tag
 steps:
-  pii-dc-relay-service:
+  image-builder:
     image: 612427630422.dkr.ecr.ap-southeast-1.amazonaws.com/sre/woodpecker:docker-26.1.4-cli
     pull: true
     environment:
