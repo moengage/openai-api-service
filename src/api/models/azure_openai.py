@@ -54,9 +54,8 @@ except Exception as e:
 # --- Model Listing (Azure Deployments) ---
 # Option 1: Hardcoded list (simple)
 KNOWN_AZURE_DEPLOYMENTS = {
-    "gpt-4": {"type": "chat", "modalities": ["TEXT"]},
-    "gpt-35-turbo": {"type": "chat", "modalities": ["TEXT"]},
-    "o3-mini": {"type": "chat", "modalities": ["TEXT", "IMAGE"]},
+    "gpt-4o": {"type": "chat", "modalities": ["TEXT"]},
+    "o3-mini": {"type": "chat", "modalities": ["TEXT"]},
 }
 
 azure_deployments_list = KNOWN_AZURE_DEPLOYMENTS
