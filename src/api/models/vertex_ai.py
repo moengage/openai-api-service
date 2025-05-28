@@ -14,6 +14,7 @@ from api.models.base import BaseChatModel, BaseEmbeddingsModel
 from api.schema import (
     ChatRequest,
     ChatResponse,
+    ChatResponseMessage, # Added
     ChatStreamResponse,
     EmbeddingsRequest,
     EmbeddingsResponse,
