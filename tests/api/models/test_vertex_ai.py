@@ -25,6 +25,7 @@ from api.schema import (
     EmbeddingsResponse,
     ModelTypeEnum, # Changed from ModelType
     ModelCard,
+    ChatResponseMessage, # Added import
     # TextContent, # Not directly used in these tests, but good for reference
     # ImageContent, # Not directly used in these tests
     # ToolCall, 
@@ -191,6 +192,9 @@ class TestVertexAIChatModel(unittest.IsolatedAsyncioTestCase): # Use IsolatedAsy
 
         self.assertIsInstance(response, ChatResponse)
         self.assertEqual(response.choices[0].message.content, "Hello from Vertex")
+        # Add assertions for type and role
+        self.assertIsInstance(response.choices[0].message, ChatResponseMessage)
+        self.assertEqual(response.choices[0].message.role, "assistant")
         self.assertEqual(response.choices[0].finish_reason, "stop")
         self.assertEqual(response.usage.prompt_tokens, 5)
         self.sdk_client_mock.generate_content_async.assert_called_once()
@@ -217,6 +221,26 @@ class TestVertexAIChatModel(unittest.IsolatedAsyncioTestCase): # Use IsolatedAsy
         self.assertEqual(parsed_chunks[2].choices[0].finish_reason, "length")
         self.assertEqual(parsed_chunks[2].usage.total_tokens, 12)
         self.assertEqual(raw_chunks[-1], b"data: [DONE]\n\n")
+
+        # Add assertions for type and role of delta messages
+        found_content_chunk = False
+        for chunk in parsed_chunks:
+            if chunk.choices and chunk.choices[0].delta:
+                delta_message = chunk.choices[0].delta
+                self.assertIsInstance(delta_message, ChatResponseMessage)
+                # Role should be 'assistant' if there's content, 
+                # or it could be None for empty deltas in chunks that only update finish_reason/usage.
+                if delta_message.content is not None:
+                    self.assertEqual(delta_message.role, "assistant")
+                    found_content_chunk = True
+                elif delta_message.tool_calls is not None: # A chunk might only have tool_calls
+                    self.assertEqual(delta_message.role, "assistant")
+                    found_content_chunk = True
+                # If a chunk is expected to only have a role (e.g. first chunk of a message with no content yet)
+                # then that specific case would need custom assertion.
+                # The current mock stream always provides content with its chunks.
+        
+        self.assertTrue(found_content_chunk, "No content or tool_call chunks found to verify delta type and role.")
 
     @patch('vertexai.init')
     @patch('vertexai.generative_models.GenerativeModel')

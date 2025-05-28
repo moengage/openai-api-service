@@ -360,11 +360,11 @@ class VertexAIChatModel(BaseChatModel):
             if text_parts_collected:
                 message_content = "".join(text_parts_collected)
 
-            api_message = AssistantMessage(
-                id=f"msg_{uuid.uuid4().hex}",
+            api_message = ChatResponseMessage(
                 role="assistant",
                 content=message_content,
                 tool_calls=tool_calls
+                # reasoning_content can be added here if/when available from the SDK response
             )
             
             finish_reason = _convert_finish_reason_from_vertex(str(first_candidate.finish_reason))
@@ -519,7 +519,11 @@ class VertexAIChatModel(BaseChatModel):
                     model=self.model_id,
                     choices=[{
                         "index": 0,
-                        "delta": AssistantMessage(role="assistant", content=delta_content, tool_calls=delta_tool_calls), # tool_calls might be partial
+                        "delta": ChatResponseMessage(
+                            role="assistant" if (delta_content is not None or delta_tool_calls is not None) else None,
+                            content=delta_content,
+                            tool_calls=delta_tool_calls
+                        ),
                         "finish_reason": finish_reason,
                         # Potentially logprobs, etc.
                     }],
