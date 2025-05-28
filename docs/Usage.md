@@ -2,7 +2,9 @@
 
 # Usage Guide
 
-Assuming you have set up below environment variables after deployed:
+This guide provides instructions on how to use the OpenAI-Compatible API Proxy to interact with different backend Large Language Models, including Amazon Bedrock, Azure OpenAI, and Google Cloud Vertex AI.
+
+Assuming you have set up the following common environment variables after deployment:
 
 ```bash
 export OPENAI_API_KEY=<API key>
@@ -15,6 +17,7 @@ export OPENAI_BASE_URL=<API base url>
 - [Multimodal API](#multimodal-api)
 - [Tool Call](#tool-call)
 - [Reasoning](#reasoning)
+- [Using Google Cloud Vertex AI Models](#using-google-cloud-vertex-ai-models)
 
 ## Models API
 
@@ -441,4 +444,106 @@ for chunk in response:
         reasoning_content += chunk.choices[0].delta.reasoning_content
     elif chunk.choices[0].delta.content:
         content += chunk.choices[0].delta.content
+
+## Using Google Cloud Vertex AI Models
+
+This proxy supports Google Cloud Vertex AI, allowing you to leverage models like Gemini and PaLM for chat completions and text embeddings through the OpenAI-compatible API.
+
+### Configuration for Vertex AI
+
+To enable Vertex AI, you need to configure the following environment variables:
+
+*   `VERTEX_AI_PROJECT_ID`: Your Google Cloud Project ID where Vertex AI is enabled.
+    *   Example: `my-gcp-project-123`
+*   `VERTEX_AI_LOCATION`: The Google Cloud region/location for your Vertex AI resources.
+    *   Example: `us-central1`
+*   `DEFAULT_VERTEX_AI_CHAT_MODEL` (Optional): Sets a default chat model for Vertex AI if none is specified in the request.
+    *   Example: `gemini-1.5-flash-001`
+*   `DEFAULT_VERTEX_AI_EMBEDDING_MODEL` (Optional): Sets a default embedding model for Vertex AI.
+    *   Example: `textembedding-gecko@003`
+
+**Authentication:**
+Authentication with Google Cloud Vertex AI typically uses Application Default Credentials (ADC). Ensure your environment is authenticated:
+*   If running locally or outside GCP, you can use `gcloud auth application-default login`.
+*   If running on GCP services (like Cloud Run, GKE, Compute Engine), the service account associated with the resource will be used, provided it has the necessary Vertex AI permissions (e.g., "Vertex AI User" role).
+*   Alternatively, you can set the `GOOGLE_APPLICATION_CREDENTIALS` environment variable to the path of a service account key JSON file.
+
+### API Examples for Vertex AI
+
+You can find the available Vertex AI model IDs by querying the `/models` endpoint.
+
+**Chat Completions Example (Gemini 1.5 Flash):**
+
+```bash
+curl $OPENAI_BASE_URL/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $OPENAI_API_KEY" \
+  -d '{
+    "model": "gemini-1.5-flash-001",
+    "messages": [
+      {"role": "user", "content": "Hello from Google Cloud Vertex AI!"}
+    ]
+  }'
+```
+
+**Example Response (Chat):**
+(Structure similar to other OpenAI chat completion responses)
+```json
+{
+    "id": "chatcmpl-vertex-...", 
+    "object": "chat.completion",
+    "created": 1677652288, 
+    "model": "gemini-1.5-flash-001",
+    "choices": [{
+        "index": 0,
+        "message": {
+            "role": "assistant",
+            "content": "Hello! How can I help you today?"
+        },
+        "finish_reason": "stop"
+    }],
+    "usage": {
+        "prompt_tokens": 10,
+        "completion_tokens": 9,
+        "total_tokens": 19
+    }
+}
+```
+
+**Embeddings Example (Gecko):**
+
+```bash
+curl $OPENAI_BASE_URL/embeddings \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $OPENAI_API_KEY" \
+  -d '{
+    "model": "textembedding-gecko@003",
+    "input": ["This is a test sentence for Vertex AI embeddings."]
+  }'
+```
+
+**Example Response (Embeddings):**
+(Structure similar to other OpenAI embedding responses)
+```json
+{
+    "object": "list",
+    "data": [
+        {
+            "object": "embedding",
+            "embedding": [
+                -0.0123, 0.0456, -0.0789, 
+                // ... more embedding values
+            ],
+            "index": 0
+        }
+    ],
+    "model": "textembedding-gecko@003",
+    "usage": {
+        "prompt_tokens": 10, // Example token count
+        "total_tokens": 10
+    }
+}
+```
+
+You can use the OpenAI SDKs in Python, Node.js, etc., by pointing the `base_url` (or `api_base`) to this proxy's URL and providing a valid API key. The `model` parameter should be set to the desired Vertex AI model ID.
 ```
