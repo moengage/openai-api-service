@@ -82,6 +82,18 @@ def _parse_content_parts_from_vertex(parts: List[Part]) -> List[Union[TextConten
         #     content_list.append(ImageContent(url=f"data:{part.inline_data.mime_type};base64,{base64.b64encode(part.inline_data.data).decode()}"))
     return content_list
 
+# --- Mock Classes for Placeholder Responses (if used in testing/simulation) ---
+# These are typically for internal simulation and might be removed if actual SDK calls are always made.
+class MockCandidate:
+    def __init__(self, parts, finish_reason_str):
+        # Ensure Content and Part are accessible here, e.g., from vertexai.generative_models
+        # Depending on how Content and Part are used, they might need to be fully qualified
+        # or ensure they are imported at the module level where this class is now defined.
+        # For this specific case, Content and Part are from vertexai.generative_models,
+        # which are already imported at the module level.
+        self.content = Content(role="model", parts=parts)
+        self.finish_reason = finish_reason_str # e.g., "STOP", "MAX_TOKENS"
+
 # --- Chat Model Implementation ---
 class VertexAIChatModel(BaseChatModel):
     def __init__(self, model_id: str):
@@ -316,11 +328,7 @@ class VertexAIChatModel(BaseChatModel):
                         return self.candidates[0].content.parts[0].text
                     return None
 
-
-            class MockCandidate:
-                def __init__(self, parts, finish_reason_str):
-                    self.content = Content(role="model", parts=parts)
-                    self.finish_reason = finish_reason_str # e.g., "STOP", "MAX_TOKENS"
+            # MockCandidate class definition was moved to module level.
 
             response = MockVertexResponse(simulated_content_parts, simulated_finish_reason)
             # --- End Placeholder Response ---
@@ -392,11 +400,7 @@ class VertexAIChatModel(BaseChatModel):
                 model=self.model_id,
                 choices=[], # No choices on error
                 usage=Usage(prompt_tokens=0, completion_tokens=0, total_tokens=0),
-                error=Error(
-                    message=str(e),
-                    type=type(e).__name__,
-                    code=None # No standard HTTP-like code here, unless we map Vertex errors
-                )
+                error=Error(error=ErrorMessage(message=str(e), type=type(e).__name__, code=None))
             )
 
     async def chat_stream(self, chat_request: ChatRequest) -> AsyncIterable[bytes]:
@@ -534,7 +538,7 @@ class VertexAIChatModel(BaseChatModel):
                 created=created_timestamp,
                 model=self.model_id,
                 choices=[],
-                error=Error(message=str(e), type=type(e).__name__, code=None)
+                error=Error(error=ErrorMessage(message=str(e), type=type(e).__name__, code=None))
             )
             yield self.stream_response_to_bytes(error_response)
             yield self.stream_response_to_bytes("[DONE]")
@@ -650,11 +654,7 @@ class VertexAIEmbeddingsModel(BaseEmbeddingsModel):
                 data=[],
                 model=self.model_id,
                 usage=Usage(prompt_tokens=0, total_tokens=0, completion_tokens=0),
-                error=Error(
-                    message=str(e),
-                    type=type(e).__name__,
-                    code=None
-                )
+                error=Error(error=ErrorMessage(message=str(e), type=type(e).__name__, code=None))
             )
 
 # --- Factory/Getter Functions ---

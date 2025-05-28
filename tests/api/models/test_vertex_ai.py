@@ -222,14 +222,61 @@ class TestVertexAIChatModel(unittest.IsolatedAsyncioTestCase): # Use IsolatedAsy
     @patch('vertexai.generative_models.GenerativeModel')
     async def test_chat_sdk_error_handling(self, MockSDKGenModelError, mock_vertex_init_err, MockSDKContentUnused, MockSDKPartUnused):
         sdk_client_err_mock = MockSDKGenModelError.return_value
-        sdk_client_err_mock.generate_content_async = AsyncMock(side_effect=Exception("Vertex SDK Internal Error"))
+        # Ensure the side_effect is an Exception instance
+        mocked_exception = Exception("Vertex SDK Internal Error")
+        sdk_client_err_mock.generate_content_async = AsyncMock(side_effect=mocked_exception)
         
         with patch('vertexai.generative_models.GenerativeModel', return_value=sdk_client_err_mock):
             error_chat_model = VertexAIChatModel(model_id=TEST_CHAT_MODEL_ID)
         
         response = await error_chat_model.chat(ChatRequest(model=TEST_CHAT_MODEL_ID, messages=[UserMessage(content="Error test")]))
+        
         self.assertIsNotNone(response.error)
-        self.assertEqual(response.error.message, "Vertex SDK Internal Error")
+        self.assertIsInstance(response.error, Error)
+        self.assertIsNotNone(response.error.error)
+        self.assertIsInstance(response.error.error, ErrorMessage)
+        self.assertEqual(response.error.error.message, "Vertex SDK Internal Error")
+        self.assertEqual(response.error.error.type, "Exception")
+        self.assertIsNone(response.error.error.code)
+
+    @patch('vertexai.init')
+    @patch('vertexai.generative_models.GenerativeModel')
+    async def test_chat_stream_sdk_error_handling(self, MockSDKGenModelError, mock_vertex_init_err, MockSDKContentUnused, MockSDKPartUnused):
+        sdk_client_err_mock = MockSDKGenModelError.return_value
+        
+        mocked_stream_exception = Exception("Vertex SDK Stream Error")
+        async def error_stream_generator():
+            raise mocked_stream_exception
+            yield # Unreachable, but makes it a generator
+
+        sdk_client_err_mock.generate_content_async.return_value = error_stream_generator()
+        
+        with patch('vertexai.generative_models.GenerativeModel', return_value=sdk_client_err_mock):
+             error_chat_model = VertexAIChatModel(model_id=TEST_CHAT_MODEL_ID)
+
+        error_response_chunk = None
+        try:
+            async for chunk_bytes in error_chat_model.chat_stream(ChatRequest(model=TEST_CHAT_MODEL_ID, messages=[UserMessage(content="Stream error test")], stream=True)):
+                if chunk_bytes == b"data: [DONE]\n\n":
+                    continue
+                json_str = chunk_bytes.decode('utf-8').replace("data: ", "").strip()
+                parsed_chunk = ChatStreamResponse(**json.loads(json_str))
+                if parsed_chunk.error:
+                    error_response_chunk = parsed_chunk
+                    break 
+        except Exception as e:
+            self.fail(f"Stream processing raised an unexpected exception: {e}")
+
+        self.assertIsNotNone(error_response_chunk, "Error chunk not found in stream")
+        self.assertIsInstance(error_response_chunk, ChatStreamResponse)
+        self.assertIsNotNone(error_response_chunk.error)
+        self.assertIsInstance(error_response_chunk.error, Error)
+        self.assertIsNotNone(error_response_chunk.error.error)
+        self.assertIsInstance(error_response_chunk.error.error, ErrorMessage)
+        self.assertEqual(error_response_chunk.error.error.message, "Vertex SDK Stream Error")
+        self.assertEqual(error_response_chunk.error.error.type, "Exception")
+        self.assertIsNone(error_response_chunk.error.error.code)
+        self.assertEqual(len(error_response_chunk.choices), 0)
 
 
 @patch('vertexai.init')
@@ -290,12 +337,22 @@ class TestVertexAIEmbeddingsModel(unittest.IsolatedAsyncioTestCase):
     @patch('vertexai.language_models.TextEmbeddingModel')
     async def test_embed_sdk_error_handling(self, MockSDKEmbModelError, mock_vertex_init_err, MockSDKTEModelOuter, mockVAEInitOuter):
         sdk_emb_client_err_mock = MockSDKEmbModelError.from_pretrained.return_value
-        sdk_emb_client_err_mock.get_embeddings_async = AsyncMock(side_effect=Exception("Vertex SDK Embedding Error"))
+        # Ensure the side_effect is an Exception instance
+        mocked_exception = Exception("Vertex SDK Embedding Error")
+        sdk_emb_client_err_mock.get_embeddings_async = AsyncMock(side_effect=mocked_exception)
+        
         with patch('vertexai.language_models.TextEmbeddingModel.from_pretrained', return_value=sdk_emb_client_err_mock):
             error_embedding_model = VertexAIEmbeddingsModel(model_id=TEST_EMBEDDING_MODEL_ID)
+        
         response = await error_embedding_model.embed(EmbeddingsRequest(model=TEST_EMBEDDING_MODEL_ID, input="Err"))
+        
         self.assertIsNotNone(response.error)
-        self.assertEqual(response.error.message, "Vertex SDK Embedding Error")
+        self.assertIsInstance(response.error, Error)
+        self.assertIsNotNone(response.error.error)
+        self.assertIsInstance(response.error.error, ErrorMessage)
+        self.assertEqual(response.error.error.message, "Vertex SDK Embedding Error")
+        self.assertEqual(response.error.error.type, "Exception")
+        self.assertIsNone(response.error.error.code)
 
 class TestVertexAIFactoryFunctions(unittest.IsolatedAsyncioTestCase): # Use IsolatedAsyncioTestCase
 

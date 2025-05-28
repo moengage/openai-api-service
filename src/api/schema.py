@@ -160,12 +160,14 @@ class ChatResponse(BaseChatResponse):
     choices: list[Choice]
     object: Literal["chat.completion"] = "chat.completion"
     usage: Usage
+    error: Optional[Error] = None # Add this line
 
 
 class ChatStreamResponse(BaseChatResponse):
     choices: list[ChoiceDelta]
     object: Literal["chat.completion.chunk"] = "chat.completion.chunk"
     usage: Usage | None = None
+    error: Optional[Error] = None # Add this line
 
 
 class EmbeddingsRequest(BaseModel):
@@ -192,10 +194,13 @@ class EmbeddingsResponse(BaseModel):
     data: list[Embedding]
     model: str
     usage: EmbeddingsUsage
+    error: Optional[Error] = None # Add this line
 
 
 class ErrorMessage(BaseModel):
     message: str
+    type: Optional[str] = None
+    code: Optional[Any] = None # Or Optional[int] / Optional[str] if more specific
 
 
 class Error(BaseModel):
