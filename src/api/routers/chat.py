@@ -6,9 +6,10 @@ from fastapi.responses import StreamingResponse
 from api.auth import api_key_auth
 from api.models.bedrock import BedrockModel
 from api.models.azure_openai import AzureOpenAIChatModel, KNOWN_AZURE_DEPLOYMENTS
+from api.models.vertex_ai import VertexAIChatModel, KNOWN_VERTEX_AI_MODELS as KNOWN_VERTEX_MODELS
 from api.schema import ChatRequest, ChatResponse, ChatStreamResponse, Error
 from api.setting import DEFAULT_MODEL, AZURE_API_KEY, AZURE_API_BASE
-from api.models.azure_openai import KNOWN_AZURE_DEPLOYMENTS
+# Removed redundant import of KNOWN_AZURE_DEPLOYMENTS
 
 router = APIRouter(
     prefix="/chat",
@@ -53,15 +54,22 @@ async def chat_completions(
         print("*********CHAT_REQUEST**********")
         print(azure_model.chat(chat_request))
         return await azure_model.chat(chat_request)
-
-    # Handle Bedrock models
-    model = BedrockModel()
-    model.validate(chat_request)
-    print("Chat_STREAM", chat_request.stream)
-    if chat_request.stream:
-        # print("*********BEADROCK_STEAM_CHAT_RESPONSE**********")
-        # print(StreamingResponse(content=model.chat_stream(chat_request), media_type="text/event-stream"))
-        return StreamingResponse(content=model.chat_stream(chat_request), media_type="text/event-stream")
-    # print("*********BEDROCK_CHAT_REQUEST**********")
-    # print(model.chat(chat_request))
-    return await model.chat(chat_request)
+    elif chat_request.model in KNOWN_VERTEX_MODELS and KNOWN_VERTEX_MODELS[chat_request.model].get("type") == "chat":
+        vertex_model = VertexAIChatModel(model_id=chat_request.model)
+        # The VertexAIChatModel's __init__ and chat/chat_stream methods already handle
+        # validation via _validate_chat_request.
+        if chat_request.stream:
+            print("*********VERTEX_AI_STREAM_CHAT_RESPONSE**********")
+            return StreamingResponse(content=vertex_model.chat_stream(chat_request), media_type="text/event-stream")
+        print("*********VERTEX_AI_CHAT_REQUEST**********")
+        return await vertex_model.chat(chat_request)
+    else:
+        # Default to Bedrock models
+        # Add a print statement to indicate which model is being used for Bedrock
+        print(f"Routing to Bedrock for model: {chat_request.model if chat_request.model else DEFAULT_MODEL}")
+        model = BedrockModel() # BedrockModel uses DEFAULT_MODEL if chat_request.model is None
+        model.validate(chat_request) # Validate the request against Bedrock's capabilities
+        print("Chat_STREAM (Bedrock)", chat_request.stream)
+        if chat_request.stream:
+            return StreamingResponse(content=model.chat_stream(chat_request), media_type="text/event-stream")
+        return await model.chat(chat_request)
