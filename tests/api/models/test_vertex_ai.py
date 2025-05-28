@@ -23,7 +23,7 @@ from api.schema import (
     # ToolMessage, # Import if tool usage is tested
     EmbeddingsRequest,
     EmbeddingsResponse,
-    ModelType,
+    ModelTypeEnum, # Changed from ModelType
     ModelCard,
     # TextContent, # Not directly used in these tests, but good for reference
     # ImageContent, # Not directly used in these tests
@@ -138,15 +138,30 @@ class TestVertexAIChatModel(unittest.IsolatedAsyncioTestCase): # Use IsolatedAsy
         self._assert_init_called_with_settings(mock_vertex_ai_init)
 
     async def test_list_models(self, MockSDKContentUnused, MockSDKPartUnused):
+        # This test is already present, needs to be updated for ModelTypeEnum
+        # and ensure all fields are checked.
         models = await self.chat_model.list_models()
         self.assertIsInstance(models, list)
-        expected_models = [
-            ModelCard(id=mid, type=ModelType.CHAT, **details)
-            for mid, details in KNOWN_VERTEX_AI_MODELS.items() if details['type'] == 'chat'
-        ]
-        self.assertEqual(len(models), len(expected_models))
+        
+        expected_chat_models_details = {
+            mid: details for mid, details in KNOWN_VERTEX_AI_MODELS.items() if details['type'] == 'chat'
+        }
+        self.assertEqual(len(models), len(expected_chat_models_details))
+
         for model_card in models:
-            self.assertTrue(any(em.id == model_card.id for em in expected_models))
+            self.assertIsInstance(model_card, ModelCard)
+            self.assertEqual(model_card.type, ModelTypeEnum.CHAT)
+            self.assertIn(model_card.id, expected_chat_models_details)
+            
+            # Verify other details from KNOWN_VERTEX_AI_MODELS
+            details = expected_chat_models_details[model_card.id]
+            self.assertEqual(model_card.modalities, details.get('modalities'))
+            self.assertEqual(model_card.context_length, details.get('context_length'))
+            # Check common ModelCard fields
+            self.assertIsInstance(model_card.created, int)
+            self.assertEqual(model_card.object, "model_card")
+            self.assertEqual(model_card.owned_by, "general")
+
 
     def test_validate_chat_request_valid(self, MockSDKContentUnused, MockSDKPartUnused):
         request = ChatRequest(model=TEST_CHAT_MODEL_ID, messages=[UserMessage(content="Hi")])
@@ -230,6 +245,29 @@ class TestVertexAIEmbeddingsModel(unittest.IsolatedAsyncioTestCase):
         self.sdk_embedding_client_mock.get_embeddings_async = AsyncMock()
         self.embedding_model = VertexAIEmbeddingsModel(model_id=TEST_EMBEDDING_MODEL_ID)
         self._assert_init_called_with_settings(mock_vertex_ai_init)
+
+    async def test_list_models(self, MockSDKTextEmbeddingModelUnused, mock_vertex_ai_init_unused):
+        """Tests the list_models method for VertexAIEmbeddingsModel."""
+        models = await self.embedding_model.list_models()
+        self.assertIsInstance(models, list)
+
+        expected_embedding_models_details = {
+            mid: details for mid, details in KNOWN_VERTEX_AI_MODELS.items() if details['type'] == 'embedding'
+        }
+        self.assertEqual(len(models), len(expected_embedding_models_details))
+
+        for model_card in models:
+            self.assertIsInstance(model_card, ModelCard)
+            self.assertEqual(model_card.type, ModelTypeEnum.EMBEDDING)
+            self.assertIn(model_card.id, expected_embedding_models_details)
+            
+            # Verify other details from KNOWN_VERTEX_AI_MODELS
+            details = expected_embedding_models_details[model_card.id]
+            self.assertEqual(model_card.output_dimensions, details.get('output_dimensions'))
+            # Check common ModelCard fields
+            self.assertIsInstance(model_card.created, int)
+            self.assertEqual(model_card.object, "model_card")
+            self.assertEqual(model_card.owned_by, "general")
 
     async def test_embed_single_input(self, MockSDKTextEmbeddingModel, mock_vertex_ai_init):
         mock_sdk_emb_response = [MockVertexSDKTextEmbedding([0.1, 0.2, 0.3], {"token_count": 3, "truncated": False})]

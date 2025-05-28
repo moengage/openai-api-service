@@ -28,9 +28,9 @@ from api.schema import (
     Usage,
     Error,
     ErrorMessage,
-    ModelType, # Assuming ModelType might be useful
-    ModelCard,  # Assuming ModelCard might be useful
-    ModelsResponse, # Assuming ModelsResponse might be useful
+    ModelTypeEnum, # Changed from ModelType
+    ModelCard,
+    # ModelsResponse is removed
 )
 
 # Google Cloud and Vertex AI imports
@@ -101,7 +101,7 @@ class VertexAIChatModel(BaseChatModel):
     async def list_models(self) -> List[ModelCard]:
         """Lists available Vertex AI chat models."""
         return [
-            ModelCard(id=model_id, type=ModelType.CHAT, **details)
+            ModelCard(id=model_id, type=ModelTypeEnum.CHAT, **details)
             for model_id, details in KNOWN_VERTEX_AI_MODELS.items()
             if details['type'] == 'chat'
         ]
@@ -558,7 +558,7 @@ class VertexAIEmbeddingsModel(BaseEmbeddingsModel):
     async def list_models(self) -> List[ModelCard]:
         """Lists available Vertex AI embedding models."""
         return [
-            ModelCard(id=model_id, type=ModelType.EMBEDDING, **details)
+            ModelCard(id=model_id, type=ModelTypeEnum.EMBEDDING, **details)
             for model_id, details in KNOWN_VERTEX_AI_MODELS.items()
             if details['type'] == 'embedding'
         ]

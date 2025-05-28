@@ -1,9 +1,24 @@
 import time
-from typing import Iterable, Literal
-
-from pydantic import BaseModel, Field
+from enum import Enum
+from typing import List, Optional, Any, Dict, Iterable, Literal # Add if not already present
+from pydantic import BaseModel, Field # Ensure these are present
 
 from api.setting import DEFAULT_MODEL
+
+
+class ModelTypeEnum(str, Enum):
+    CHAT = "chat"
+    EMBEDDING = "embedding"
+
+class ModelCard(BaseModel):
+    id: str
+    type: ModelTypeEnum # Use the Enum
+    created: int = Field(default_factory=lambda: int(time.time()))
+    object: str = "model_card"
+    owned_by: str = "general"
+    modalities: Optional[List[str]] = None
+    context_length: Optional[int] = None
+    output_dimensions: Optional[int] = None
 
 
 class Model(BaseModel):
