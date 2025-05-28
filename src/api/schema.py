@@ -100,6 +100,16 @@ class StreamOptions(BaseModel):
     include_usage: bool = True
 
 
+class ErrorMessage(BaseModel):
+    message: str
+    type: Optional[str] = None
+    code: Optional[Any] = None # Or Optional[int] / Optional[str] if more specific
+
+
+class Error(BaseModel):
+    error: ErrorMessage
+
+
 class ChatRequest(BaseModel):
     messages: list[SystemMessage | UserMessage | AssistantMessage | ToolMessage]
     model: str = DEFAULT_MODEL
@@ -196,15 +206,7 @@ class EmbeddingsResponse(BaseModel):
     usage: EmbeddingsUsage
     error: Optional[Error] = None # Add this line
 
-
-class ErrorMessage(BaseModel):
-    message: str
-    type: Optional[str] = None
-    code: Optional[Any] = None # Or Optional[int] / Optional[str] if more specific
-
-
-class Error(BaseModel):
-    error: ErrorMessage
+# ErrorMessage and Error are now defined before ChatResponse, ChatStreamResponse, EmbeddingsResponse
 
 class ChatMessage:
     def __init__(self, role: str, content: str):
