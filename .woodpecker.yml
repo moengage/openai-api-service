@@ -1,3 +1,5 @@
+labels:
+  hostname: sre-dc-amd-agent
 clone:
   git:
     image: woodpeckerci/plugin-git
